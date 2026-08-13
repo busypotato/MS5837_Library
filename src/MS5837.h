@@ -42,70 +42,112 @@ THE SOFTWARE.
 
 class MS5837 {
 public:
-	static const float Pa;
-	static const float bar;
-	static const float mbar;
+  static const float Pa;
+  static const float bar;
+  static const float mbar;
 
-	static const uint8_t MS5837_30BA;
-	static const uint8_t MS5837_02BA;
-	static const uint8_t MS5837_UNRECOGNISED;
+  static const uint8_t MS5837_30BA;
+  static const uint8_t MS5837_02BA;
+  static const uint8_t MS5837_UNRECOGNISED;
 
-	MS5837();
+  MS5837();
 
-	bool init(TwoWire &wirePort = Wire);
-	bool begin(TwoWire &wirePort = Wire); // Calls init()
+  bool init(TwoWire &wirePort = Wire);
+  bool begin(TwoWire &wirePort = Wire); // Calls init()
 
-	/** Set model of MS5837 sensor. Valid options are MS5837::MS5837_30BA (default)
-	 * and MS5837::MS5837_02BA.
-	 */
-	void setModel(uint8_t model);
-	uint8_t getModel();
+  /** Set model of MS5837 sensor. Valid options are MS5837::MS5837_30BA
+   * (default) and MS5837::MS5837_02BA.
+   */
+  void setModel(uint8_t model);
+  uint8_t getModel();
 
-	/** Provide the density of the working fluid in kg/m^3. Default is for
-	 * seawater. Should be 997 for freshwater.
-	 */
-	void setFluidDensity(float density);
+  /** Set the oversampling ratio (OSR) used for temperature conversions.
+   * Valid values are 256, 512, 1024, 2048, 4096 and 8192 (the default).
+   * A higher OSR gives lower noise but a longer conversion time; lowering
+   * the OSR is the main way to speed up read(). Returns true if the value
+   * was accepted, or false if it was invalid (in which case the previous
+   * setting is kept unchanged).
+   */
+  bool setTemperatureOSR(uint16_t osr);
 
-	/** The read from I2C takes up to 40 ms, so use sparingly is possible.
-	 */
-	void read();
+  /** Returns the currently configured temperature OSR. */
+  uint16_t getTemperatureOSR();
 
-	/** Pressure returned in mbar or mbar*conversion rate.
-	 */
-	float pressure(float conversion = 1.0f);
+  /** Set the oversampling ratio (OSR) used for pressure conversions.
+   * Valid values are 256, 512, 1024, 2048, 4096 and 8192 (the default).
+   * A higher OSR gives lower noise but a longer conversion time; lowering
+   * the OSR is the main way to speed up read(). Returns true if the value
+   * was accepted, or false if it was invalid (in which case the previous
+   * setting is kept unchanged).
+   */
+  bool setPressureOSR(uint16_t osr);
 
-	/** Temperature returned in deg C.
-	 */
-	float temperature();
+  /** Returns the currently configured pressure OSR. */
+  uint16_t getPressureOSR();
 
-	/** Depth returned in meters (valid for operation in incompressible
-	 *  liquids only. Uses density that is set for fresh or seawater.
-	 */
-	float depth();
+  /** Returns the ADC conversion delay, in milliseconds, currently used for
+   * pressure conversions. This depends on the configured pressure OSR and is
+   * exposed to support building a non-blocking read loop.
+   */
+  uint32_t getPressureConversionDelayMS();
 
-	/** Altitude returned in meters (valid for operation in air only).
-	 */
-	float altitude();
+  /** Returns the ADC conversion delay, in milliseconds, currently used for
+   * temperature conversions. This depends on the configured temperature OSR
+   * and is exposed to support building a non-blocking read loop.
+   */
+  uint32_t getTemperatureConversionDelayMS();
+
+  /** Provide the density of the working fluid in kg/m^3. Default is for
+   * seawater. Should be 997 for freshwater.
+   */
+  void setFluidDensity(float density);
+
+  /** The read from I2C takes up to 40 ms at the default (highest) OSR and
+   *  less at lower OSR, so use sparingly if possible.
+   */
+  void read();
+
+  /** Pressure returned in mbar or mbar*conversion rate.
+   */
+  float pressure(float conversion = 1.0f);
+
+  /** Temperature returned in deg C.
+   */
+  float temperature();
+
+  /** Depth returned in meters (valid for operation in incompressible
+   *  liquids only. Uses density that is set for fresh or seawater.
+   */
+  float depth();
+
+  /** Altitude returned in meters (valid for operation in air only).
+   */
+  float altitude();
 
 private:
+  // This stores the requested i2c port
+  TwoWire *_i2cPort;
 
-	//This stores the requested i2c port
-	TwoWire * _i2cPort;
+  uint16_t C[8];
+  uint32_t D1_pres, D2_temp;
+  int32_t TEMP;
+  int32_t P;
+  uint8_t _model;
+  uint16_t _D1PressureOSR;
+  uint16_t _D2TemperatureOSR;
+  uint8_t _D1PressureConvertCmd;
+  uint8_t _D2TemperatureConvertCmd;
+  uint32_t _D1PressureConversionDelayMS;
+  uint32_t _D2TemperatureConversionDelayMS;
 
-	uint16_t C[8];
-	uint32_t D1_pres, D2_temp;
-	int32_t TEMP;
-	int32_t P;
-	uint8_t _model;
+  float fluidDensity;
 
-	float fluidDensity;
+  /** Performs calculations per the sensor data sheet for conversion and
+   *  second order compensation.
+   */
+  void calculate();
 
-	/** Performs calculations per the sensor data sheet for conversion and
-	 *  second order compensation.
-	 */
-	void calculate();
-
-	uint8_t crc4(uint16_t n_prom[]);
+  uint8_t crc4(uint16_t n_prom[]);
 };
 
 #endif

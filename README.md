@@ -8,7 +8,7 @@ This library also supports the MS5837-02BA which has a much smaller measurement 
 
 Please see the examples for normal operation. Below are the available functions used in the library.
 
-``` cpp
+```cpp
 MS5837();
 
 /** Must be called before attempting to operate the sensor.
@@ -28,12 +28,37 @@ bool begin(TwoWire &wirePort);
  */
 void setModel(uint8_t model);
 
+/** Set the oversampling ratio (OSR) used for pressure or temperature
+ * conversions. Valid values are 256, 512, 1024, 2048, 4096 and 8192 (the
+ * default). A higher OSR gives lower noise but a longer conversion time, so
+ * lowering the OSR is the main way to increase the sample rate. Each setter
+ * returns true if the value was accepted, or false if it was invalid (in
+ * which case the previous setting is kept).
+ */
+bool setPressureOSR(uint16_t osr);
+bool setTemperatureOSR(uint16_t osr);
+
+/** Return the currently configured OSR for each channel.
+ */
+uint16_t getPressureOSR();
+uint16_t getTemperatureOSR();
+
+/** Return the ADC conversion delay, in milliseconds, currently used for each
+ * channel. This depends on the configured OSR and is exposed to help build a
+ * non-blocking read loop.
+ */
+uint32_t getPressureConversionDelayMS();
+uint32_t getTemperatureConversionDelayMS();
+
 /** Provide the density of the working fluid in kg/m^3. Default is for
  * seawater. Should be 997 for freshwater.
  */
 void setFluidDensity(float density);
 
-/** The read from I2C takes up for 40 ms, so use sparingly if possible.
+/** Reads the sensor. Performs a pressure conversion followed by a temperature
+ * conversion and blocks for the conversion time of each, so the duration
+ * depends on the configured OSR (up to ~40 ms at the default OSR of 8192, and
+ * much less at lower OSR). Use sparingly if possible.
  */
 void read();
 
@@ -56,7 +81,34 @@ float altitude();
 
 ```
 
+# Sample rate and oversampling (OSR)
+
+By default the sensor uses the highest oversampling ratio (8192) for both
+pressure and temperature, which gives the best resolution but the slowest
+conversion. If you need faster readings, lower the OSR with `setPressureOSR()`
+and/or `setTemperatureOSR()`. The available values and their approximate
+maximum conversion times (per the datasheet) are:
+
+| OSR  | Max conversion time |
+|------|---------------------|
+| 256  | 0.56 ms             |
+| 512  | 1.10 ms             |
+| 1024 | 2.17 ms             |
+| 2048 | 4.32 ms             |
+| 4096 | 8.61 ms             |
+| 8192 | 17.2 ms             |
+
+Because `read()` performs a pressure conversion and a temperature conversion
+back to back, the total time is roughly the sum of the two channels'
+conversion times plus I2C overhead. Since temperature changes slowly, one
+common optimisation is to sample temperature less often than pressure.
+
 # Versions
+
+1.1.0 - Expose per-channel oversampling configuration (`setPressureOSR` /
+        `setTemperatureOSR`, with matching getters and conversion-delay
+        getters) so the sample rate can be increased. Fully backwards
+        compatible; no existing calls change.
 
 1.0.0 - First release, included in Arduino Library Manager
 

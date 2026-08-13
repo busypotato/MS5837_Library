@@ -62,6 +62,21 @@ void setup() {
   // Uncomment the next line to force the sensor model to the MS5837_30BA.
   //sensor.setModel(MS5837::MS5837_30BA);
 
+  // The constructor sets the default oversampling ratio (OSR) for both the
+  // temperature and pressure conversions. The default is the highest OSR
+  // available, 8192, which gives the best resolution and the longest
+  // conversion time. Available OSR values are: 256, 512, 1024, 2048, 4096,
+  // 8192. Lowering the OSR gives faster reads at the cost of more noise.
+  // The setters return false and keep the previous setting if given an
+  // invalid value. Uncomment the following lines to set the pressure OSR to
+  // 1024 and the temperature OSR to 256.
+  // if (!sensor.setPressureOSR(1024)) {
+  //   Serial.println(F("Invalid pressure OSR; keeping previous value"));
+  // }
+  // if (!sensor.setTemperatureOSR(256)) {
+  //   Serial.println(F("Invalid temperature OSR; keeping previous value"));
+  // }
+
   sensor.setFluidDensity(997); // kg/m^3 (freshwater, 1029 for seawater)
 }
 

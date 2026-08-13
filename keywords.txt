@@ -16,6 +16,12 @@ begin	KEYWORD2
 init	KEYWORD2
 setModel	KEYWORD2
 getModel	KEYWORD2
+setTemperatureOSR	KEYWORD2
+getTemperatureOSR	KEYWORD2
+setPressureOSR	KEYWORD2
+getPressureOSR	KEYWORD2
+getPressureConversionDelayMS	KEYWORD2
+getTemperatureConversionDelayMS	KEYWORD2
 setFluidDensity	KEYWORD2
 read	KEYWORD2
 pressure	KEYWORD2
@@ -29,3 +35,4 @@ altitude	KEYWORD2
 
 MS5837_30BA	LITERAL1
 MS5837_02BA	LITERAL1
+MS5837_UNRECOGNISED	LITERAL1
