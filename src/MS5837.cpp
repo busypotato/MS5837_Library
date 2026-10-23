@@ -25,6 +25,14 @@ const uint32_t MS5837_2048_DELAY_MS = 5UL;
 const uint32_t MS5837_4096_DELAY_MS = 9UL;
 const uint32_t MS5837_8192_DELAY_MS = 18UL;
 
+// Maximum conversion times from the datasheet, in microseconds
+const uint32_t MS5837_256_DELAY_US = 560UL;
+const uint32_t MS5837_512_DELAY_US = 1100UL;
+const uint32_t MS5837_1024_DELAY_US = 2170UL;
+const uint32_t MS5837_2048_DELAY_US = 4320UL;
+const uint32_t MS5837_4096_DELAY_US = 8610UL;
+const uint32_t MS5837_8192_DELAY_US = 17200UL;
+
 const uint16_t MS5837::MS5837_OSR_256 = 256;
 const uint16_t MS5837::MS5837_OSR_512 = 512;
 const uint16_t MS5837::MS5837_OSR_1024 = 1024;
@@ -47,6 +55,7 @@ const uint16_t MS5837_02BA_30BA_SEPARATION = 37000;
 const uint16_t MS5837_30BA_MIN_SENSITIVITY = 26000;
 
 MS5837::MS5837() {
+  _i2cPort = NULL; // read() and the request/read functions check this
   fluidDensity = 1029;
   this->setTemperatureOSR(8192);
   this->setPressureOSR(8192);
@@ -110,38 +119,46 @@ uint8_t MS5837::getModel() { return (_model); }
 
 bool MS5837::setPressureOSR(uint16_t osr) {
   uint8_t cmd;
-  uint32_t d;
+  uint32_t d_ms;
+  uint32_t d_us;
   switch (osr) {
   case 256:
     cmd = MS5837_CONVERT_D1_256;
-    d = MS5837_256_DELAY_MS;
+    d_ms = MS5837_256_DELAY_MS;
+    d_us = MS5837_256_DELAY_US;
     break;
   case 512:
     cmd = MS5837_CONVERT_D1_512;
-    d = MS5837_512_DELAY_MS;
+    d_ms = MS5837_512_DELAY_MS;
+    d_us = MS5837_512_DELAY_US;
     break;
   case 1024:
     cmd = MS5837_CONVERT_D1_1024;
-    d = MS5837_1024_DELAY_MS;
+    d_ms = MS5837_1024_DELAY_MS;
+    d_us = MS5837_1024_DELAY_US;
     break;
   case 2048:
     cmd = MS5837_CONVERT_D1_2048;
-    d = MS5837_2048_DELAY_MS;
+    d_ms = MS5837_2048_DELAY_MS;
+    d_us = MS5837_2048_DELAY_US;
     break;
   case 4096:
     cmd = MS5837_CONVERT_D1_4096;
-    d = MS5837_4096_DELAY_MS;
+    d_ms = MS5837_4096_DELAY_MS;
+    d_us = MS5837_4096_DELAY_US;
     break;
   case 8192:
     cmd = MS5837_CONVERT_D1_8192;
-    d = MS5837_8192_DELAY_MS;
+    d_ms = MS5837_8192_DELAY_MS;
+    d_us = MS5837_8192_DELAY_US;
     break;
   default:
     return false; // reject; leave existing setting untouched
   }
   _D1PressureOSR = osr;
   _D1PressureConvertCmd = cmd;
-  _D1PressureConversionDelayMS = d;
+  _D1PressureConversionDelayMS = d_ms;
+  _D1PressureConversionDelayUS = d_us;
   return true;
 }
 
@@ -149,38 +166,46 @@ uint16_t MS5837::getPressureOSR() { return (_D1PressureOSR); }
 
 bool MS5837::setTemperatureOSR(uint16_t osr) {
   uint8_t cmd;
-  uint32_t d;
+  uint32_t d_ms;
+  uint32_t d_us;
   switch (osr) {
   case 256:
     cmd = MS5837_CONVERT_D2_256;
-    d = MS5837_256_DELAY_MS;
+    d_ms = MS5837_256_DELAY_MS;
+    d_us = MS5837_256_DELAY_US;
     break;
   case 512:
     cmd = MS5837_CONVERT_D2_512;
-    d = MS5837_512_DELAY_MS;
+    d_ms = MS5837_512_DELAY_MS;
+    d_us = MS5837_512_DELAY_US;
     break;
   case 1024:
     cmd = MS5837_CONVERT_D2_1024;
-    d = MS5837_1024_DELAY_MS;
+    d_ms = MS5837_1024_DELAY_MS;
+    d_us = MS5837_1024_DELAY_US;
     break;
   case 2048:
     cmd = MS5837_CONVERT_D2_2048;
-    d = MS5837_2048_DELAY_MS;
+    d_ms = MS5837_2048_DELAY_MS;
+    d_us = MS5837_2048_DELAY_US;
     break;
   case 4096:
     cmd = MS5837_CONVERT_D2_4096;
-    d = MS5837_4096_DELAY_MS;
+    d_ms = MS5837_4096_DELAY_MS;
+    d_us = MS5837_4096_DELAY_US;
     break;
   case 8192:
     cmd = MS5837_CONVERT_D2_8192;
-    d = MS5837_8192_DELAY_MS;
+    d_ms = MS5837_8192_DELAY_MS;
+    d_us = MS5837_8192_DELAY_US;
     break;
   default:
     return false; // reject; leave existing setting untouched
   }
   _D2TemperatureOSR = osr;
   _D2TemperatureConvertCmd = cmd;
-  _D2TemperatureConversionDelayMS = d;
+  _D2TemperatureConversionDelayMS = d_ms;
+  _D2TemperatureConversionDelayUS = d_us;
   return true;
 }
 
@@ -194,6 +219,14 @@ uint32_t MS5837::getTemperatureConversionDelayMS() {
   return (_D2TemperatureConversionDelayMS);
 }
 
+uint32_t MS5837::getPressureConversionDelayUS() {
+  return (_D1PressureConversionDelayUS);
+}
+
+uint32_t MS5837::getTemperatureConversionDelayUS() {
+  return (_D2TemperatureConversionDelayUS);
+}
+
 void MS5837::setFluidDensity(float density) { fluidDensity = density; }
 
 void MS5837::read() {
@@ -204,41 +237,53 @@ void MS5837::read() {
     return;
   }
 
-  // Request D1 conversion
-  _i2cPort->beginTransmission(MS5837_ADDR);
-  _i2cPort->write(_D1PressureConvertCmd);
-  _i2cPort->endTransmission();
-
+  requestPressureConversion();
   delay(_D1PressureConversionDelayMS);
+  readPressureResult();
 
-  _i2cPort->beginTransmission(MS5837_ADDR);
-  _i2cPort->write(MS5837_ADC_READ);
-  _i2cPort->endTransmission();
-
-  _i2cPort->requestFrom(MS5837_ADDR, 3);
-  D1_pres = 0;
-  D1_pres = _i2cPort->read();
-  D1_pres = (D1_pres << 8) | _i2cPort->read();
-  D1_pres = (D1_pres << 8) | _i2cPort->read();
-
-  // Request D2 conversion
-  _i2cPort->beginTransmission(MS5837_ADDR);
-  _i2cPort->write(_D2TemperatureConvertCmd);
-  _i2cPort->endTransmission();
-
+  requestTemperatureConversion();
   delay(_D2TemperatureConversionDelayMS);
-
-  _i2cPort->beginTransmission(MS5837_ADDR);
-  _i2cPort->write(MS5837_ADC_READ);
-  _i2cPort->endTransmission();
-
-  _i2cPort->requestFrom(MS5837_ADDR, 3);
-  D2_temp = 0;
-  D2_temp = _i2cPort->read();
-  D2_temp = (D2_temp << 8) | _i2cPort->read();
-  D2_temp = (D2_temp << 8) | _i2cPort->read();
+  readTemperatureResult();
 
   calculate();
+}
+
+bool MS5837::requestPressureConversion() {
+  return sendCommand(_D1PressureConvertCmd);
+}
+
+bool MS5837::readPressureResult() { return readADC(D1_pres); }
+
+bool MS5837::requestTemperatureConversion() {
+  return sendCommand(_D2TemperatureConvertCmd);
+}
+
+bool MS5837::readTemperatureResult() { return readADC(D2_temp); }
+
+bool MS5837::sendCommand(uint8_t cmd) {
+  if (_i2cPort == NULL) {
+    return false;
+  }
+  _i2cPort->beginTransmission(MS5837_ADDR);
+  _i2cPort->write(cmd);
+  return _i2cPort->endTransmission() == 0;
+}
+
+// Reads the 24-bit ADC result. The sensor returns 0 if the conversion has not
+// finished, so 0 is reported as a failure; `result` is still updated.
+bool MS5837::readADC(uint32_t &result) {
+  if (!sendCommand(MS5837_ADC_READ)) {
+    return false;
+  }
+
+  if (_i2cPort->requestFrom(MS5837_ADDR, (uint8_t)3) != 3) {
+    return false;
+  }
+  result = _i2cPort->read();
+  result = (result << 8) | _i2cPort->read();
+  result = (result << 8) | _i2cPort->read();
+
+  return result != 0;
 }
 
 void MS5837::calculate() {

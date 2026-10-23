@@ -94,16 +94,28 @@ public:
   uint16_t getPressureOSR();
 
   /** Returns the ADC conversion delay, in milliseconds, currently used for
-   * pressure conversions. This depends on the configured pressure OSR and is
-   * exposed to support building a non-blocking read loop.
+   * pressure conversions: the datasheet maximum for the configured OSR,
+   * rounded up to a whole millisecond. This is what read() waits.
    */
   uint32_t getPressureConversionDelayMS();
 
   /** Returns the ADC conversion delay, in milliseconds, currently used for
-   * temperature conversions. This depends on the configured temperature OSR
-   * and is exposed to support building a non-blocking read loop.
+   * temperature conversions: the datasheet maximum for the configured OSR,
+   * rounded up to a whole millisecond. This is what read() waits.
    */
   uint32_t getTemperatureConversionDelayMS();
+
+  /** Datasheet maximum pressure conversion time, in microseconds, for the
+   * configured OSR. Use this to wait between requestPressureConversion() and
+   * readPressureResult().
+   */
+  uint32_t getPressureConversionDelayUS();
+
+  /** Datasheet maximum temperature conversion time, in microseconds, for the
+   * configured OSR. Use this to wait between requestTemperatureConversion()
+   * and readTemperatureResult().
+   */
+  uint32_t getTemperatureConversionDelayUS();
 
   /** Provide the density of the working fluid in kg/m^3. Default is for
    * seawater. Should be 997 for freshwater.
@@ -114,6 +126,43 @@ public:
    *  less at lower OSR, so use sparingly if possible.
    */
   void read();
+
+  /* Non-blocking read, in the order read() performs it:
+   *
+   *   requestPressureConversion();
+   *   wait getPressureConversionDelayUS();
+   *   readPressureResult();
+   *   requestTemperatureConversion();
+   *   wait getTemperatureConversionDelayUS();
+   *   readTemperatureResult();
+   *   calculate();
+   *
+   * Only one conversion can run per sensor at a time, and the result must be
+   * read before the next conversion is requested. The waits are up to the
+   * caller, so conversions on sensors on different buses can overlap.
+   */
+
+  /** Start a pressure (D1) conversion. Returns false on an I2C error. */
+  bool requestPressureConversion();
+
+  /** Read the finished pressure (D1) conversion. Returns false on an I2C
+   * error, or if the sensor returned 0 (conversion not finished yet).
+   */
+  bool readPressureResult();
+
+  /** Start a temperature (D2) conversion. Returns false on an I2C error. */
+  bool requestTemperatureConversion();
+
+  /** Read the finished temperature (D2) conversion. Returns false on an I2C
+   * error, or if the sensor returned 0 (conversion not finished yet).
+   */
+  bool readTemperatureResult();
+
+  /** Performs calculations per the sensor data sheet for conversion and
+   *  second order compensation, from the last pressure and temperature
+   *  results. Updates pressure() and temperature().
+   */
+  void calculate();
 
   /** Pressure returned in mbar or mbar*conversion rate.
    */
@@ -147,13 +196,13 @@ private:
   uint8_t _D2TemperatureConvertCmd;
   uint32_t _D1PressureConversionDelayMS;
   uint32_t _D2TemperatureConversionDelayMS;
+  uint32_t _D1PressureConversionDelayUS;
+  uint32_t _D2TemperatureConversionDelayUS;
 
   float fluidDensity;
 
-  /** Performs calculations per the sensor data sheet for conversion and
-   *  second order compensation.
-   */
-  void calculate();
+  bool sendCommand(uint8_t cmd);
+  bool readADC(uint32_t &result);
 
   uint8_t crc4(uint16_t n_prom[]);
 };
