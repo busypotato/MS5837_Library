@@ -39,6 +39,7 @@ THE SOFTWARE.
 
 #include "Arduino.h"
 #include <Wire.h>
+#include <cstdint>
 
 class MS5837 {
 public:
@@ -49,6 +50,13 @@ public:
   static const uint8_t MS5837_30BA;
   static const uint8_t MS5837_02BA;
   static const uint8_t MS5837_UNRECOGNISED;
+
+  static const uint16_t MS5837_OSR_256;
+  static const uint16_t MS5837_OSR_512;
+  static const uint16_t MS5837_OSR_1024;
+  static const uint16_t MS5837_OSR_2048;
+  static const uint16_t MS5837_OSR_4096;
+  static const uint16_t MS5837_OSR_8192;
 
   MS5837();
 

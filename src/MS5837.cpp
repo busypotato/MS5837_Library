@@ -25,6 +25,13 @@ const uint32_t MS5837_2048_DELAY_MS = 5UL;
 const uint32_t MS5837_4096_DELAY_MS = 9UL;
 const uint32_t MS5837_8192_DELAY_MS = 18UL;
 
+const uint16_t MS5837::MS5837_OSR_256 = 256;
+const uint16_t MS5837::MS5837_OSR_512 = 512;
+const uint16_t MS5837::MS5837_OSR_1024 = 1024;
+const uint16_t MS5837::MS5837_OSR_2048 = 2048;
+const uint16_t MS5837::MS5837_OSR_4096 = 4096;
+const uint16_t MS5837::MS5837_OSR_8192 = 8192;
+
 const float MS5837::Pa = 100.0f;
 const float MS5837::bar = 0.001f;
 const float MS5837::mbar = 1.0f;
